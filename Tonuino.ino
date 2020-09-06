@@ -5,6 +5,10 @@
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
+// Maximum allowed volume leven (up to 30)
+#define VOL_MAX    (15)
+int currentVol = (VOL_MAX / 2);
+
 // DFPlayer Mini
 SoftwareSerial mySoftwareSerial(2, 3); // RX, TX
 uint16_t numTracksInFolder;
@@ -73,7 +77,7 @@ static void nextTrack(uint16_t track) {
     return;
    }
    _lastTrackFinished = track;
-   
+
    if (knownCard == false)
     // Wenn eine neue Karte angelernt wird soll das Ende eines Tracks nicht
     // verarbeitet werden
@@ -89,7 +93,7 @@ static void nextTrack(uint16_t track) {
       mp3.playFolderTrack(myCard.folder, currentTrack);
       Serial.print(F("Albummodus ist aktiv -> nächster Track: "));
       Serial.print(currentTrack);
-    } else 
+    } else
 //      mp3.sleep();   // Je nach Modul kommt es nicht mehr zurück aus dem Sleep!
     { }
   }
@@ -166,9 +170,10 @@ byte blockAddr = 4;
 byte trailerBlock = 7;
 MFRC522::StatusCode status;
 
-#define buttonPause A0
-#define buttonUp A1
-#define buttonDown A2
+#define buttonPause A1
+#define buttonUp A2
+#define buttonDown A0
+#define pinVol A5
 #define busyPin 4
 
 #define LONG_PRESS 1000
@@ -235,6 +240,16 @@ void loop() {
     upButton.read();
     downButton.read();
 
+    // Lautstärke einlesen
+    int vol = (VOL_MAX - ((analogRead(pinVol) * (VOL_MAX + 1)) / 1024));
+    if (currentVol != vol) {
+      currentVol = vol;
+      Serial.print(F("volume: "));
+      Serial.println(vol);
+      mp3.setVolume((uint8_t)vol);  
+    }
+    
+
     if (pauseButton.wasReleased()) {
       if (ignorePauseButton == false) {
         if (isPlaying())
@@ -259,8 +274,8 @@ void loop() {
     }
 
     if (upButton.pressedFor(LONG_PRESS)) {
-      Serial.println(F("Volume Up"));
-      mp3.increaseVolume();
+      //Serial.println(F("Volume Up"));
+      //mp3.increaseVolume();
       ignoreUpButton = true;
     } else if (upButton.wasReleased()) {
       if (!ignoreUpButton)
@@ -270,8 +285,8 @@ void loop() {
     }
 
     if (downButton.pressedFor(LONG_PRESS)) {
-      Serial.println(F("Volume Down"));
-      mp3.decreaseVolume();
+      //Serial.println(F("Volume Down"));
+      //mp3.decreaseVolume();
       ignoreDownButton = true;
     } else if (downButton.wasReleased()) {
       if (!ignoreDownButton)
@@ -390,7 +405,7 @@ int voiceMenu(int numberOfOptions, int startMessage, int messageOffset,
       } else
         ignoreUpButton = false;
     }
-    
+
     if (downButton.pressedFor(LONG_PRESS)) {
       returnValue = max(returnValue - 10, 1);
       mp3.playMp3FolderTrack(messageOffset + returnValue);
@@ -493,7 +508,7 @@ bool readCard(nfcTagObject *nfcTag) {
     returnValue = false;
     Serial.print(F("PCD_Authenticate() failed: "));
     Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
+    return returnValue;
   }
 
   // Show the whole sector as it currently is
