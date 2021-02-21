@@ -6,10 +6,16 @@
 #include <SoftwareSerial.h>
 
 // Maximum allowed volume leven (up to 30)
-#define VOL_MAX    (16)
-#define VOL_MIN     (3)
+#define VOL_MAX    (20)
+#define VOL_MIN     (5)
 #define VOL_RANGE   VOL_MAX - VOL_MIN
 int currentVol = (VOL_MAX / 2);
+
+#define buttonPause 6
+#define buttonUp A2
+#define buttonDown A0
+#define pinVol A6
+#define busyPin 4
 
 // DFPlayer Mini
 SoftwareSerial mySoftwareSerial(2, 3); // RX, TX
@@ -44,29 +50,20 @@ public:
     Serial.print("Com Error ");
     Serial.println(errorCode);
   }
-  static void OnPlayFinished(uint16_t track) {
+  static void OnPlayFinished(int src, uint16_t track) {
     Serial.print("Track beendet");
     Serial.println(track);
     delay(100);
     nextTrack(track);
   }
-  static void OnCardOnline(uint16_t code) {
+  static void OnPlaySourceOnline(int code) {
     Serial.println(F("SD Karte online "));
   }
-  static void OnCardInserted(uint16_t code) {
-    Serial.println(F("SD Karte bereit "));
+  static void OnPlaySourceInserted(uint16_t code) {
+    Serial.println(F("SD Karte eingesteckt "));
   }
-  static void OnCardRemoved(uint16_t code) {
+  static void OnPlaySourceRemoved(uint16_t code) {
     Serial.println(F("SD Karte entfernt "));
-  }
-  static void OnUsbOnline(uint16_t code) {
-      Serial.println(F("USB online "));
-  }
-  static void OnUsbInserted(uint16_t code) {
-      Serial.println(F("USB bereit "));
-  }
-  static void OnUsbRemoved(uint16_t code) {
-    Serial.println(F("USB entfernt "));
   }
 };
 
@@ -171,12 +168,6 @@ byte sector = 1;
 byte blockAddr = 4;
 byte trailerBlock = 7;
 MFRC522::StatusCode status;
-
-#define buttonPause A1
-#define buttonUp A2
-#define buttonDown A0
-#define pinVol A5
-#define busyPin 4
 
 #define LONG_PRESS 1000
 
