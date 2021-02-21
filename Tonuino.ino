@@ -6,7 +6,9 @@
 #include <SoftwareSerial.h>
 
 // Maximum allowed volume leven (up to 30)
-#define VOL_MAX    (15)
+#define VOL_MAX    (16)
+#define VOL_MIN     (3)
+#define VOL_RANGE   VOL_MAX - VOL_MIN
 int currentVol = (VOL_MAX / 2);
 
 // DFPlayer Mini
@@ -213,6 +215,7 @@ void setup() {
   // NFC Leser initialisieren
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522
+  delay(4);
   mfrc522
       .PCD_DumpVersionToSerial(); // Show details of PCD - MFRC522 Card Reader
   for (byte i = 0; i < 6; i++) {
@@ -241,16 +244,16 @@ void loop() {
     downButton.read();
 
     // Lautstärke einlesen
-    int vol = (VOL_MAX - ((analogRead(pinVol) * (VOL_MAX + 1)) / 1024));
+    int vol = (VOL_MAX - ((analogRead(pinVol) * (VOL_RANGE + 1)) / 1024));
     if (currentVol != vol) {
       currentVol = vol;
       Serial.print(F("volume: "));
       Serial.println(vol);
       mp3.setVolume((uint8_t)vol);  
-    }
-    
+    }    
 
     if (pauseButton.wasReleased()) {
+      Serial.println("pause");
       if (ignorePauseButton == false) {
         if (isPlaying())
           mp3.pause();
@@ -260,6 +263,7 @@ void loop() {
       ignorePauseButton = false;
     } else if (pauseButton.pressedFor(LONG_PRESS) &&
                ignorePauseButton == false) {
+      Serial.println("pause long");
       if (isPlaying())
         mp3.playAdvertisement(currentTrack);
       else {
@@ -272,27 +276,15 @@ void loop() {
       }
       ignorePauseButton = true;
     }
-
-    if (upButton.pressedFor(LONG_PRESS)) {
-      //Serial.println(F("Volume Up"));
-      //mp3.increaseVolume();
-      ignoreUpButton = true;
-    } else if (upButton.wasReleased()) {
-      if (!ignoreUpButton)
-        nextTrack(random(65536));
-      else
-        ignoreUpButton = false;
+  
+    if (upButton.wasReleased()) {
+      Serial.println("NEXT");
+      nextTrack(random(65536));
     }
-
-    if (downButton.pressedFor(LONG_PRESS)) {
-      //Serial.println(F("Volume Down"));
-      //mp3.decreaseVolume();
-      ignoreDownButton = true;
-    } else if (downButton.wasReleased()) {
-      if (!ignoreDownButton)
-        previousTrack();
-      else
-        ignoreDownButton = false;
+    
+    if (downButton.wasReleased()) {
+      Serial.println("PREV");
+      previousTrack();
     }
     // Ende der Buttons
   } while (!mfrc522.PICC_IsNewCardPresent());
