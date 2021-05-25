@@ -44,29 +44,20 @@ public:
     Serial.print("Com Error ");
     Serial.println(errorCode);
   }
-  static void OnPlayFinished(uint16_t track) {
+  static void OnPlayFinished(DfMp3_PlaySource source, uint16_t track) {
     Serial.print("Track beendet");
     Serial.println(track);
     delay(100);
     nextTrack(track);
   }
-  static void OnCardOnline(uint16_t code) {
-    Serial.println(F("SD Karte online "));
-  }
-  static void OnCardInserted(uint16_t code) {
+  static void OnPlaySourceOnline(DfMp3_PlaySource source) {
     Serial.println(F("SD Karte bereit "));
   }
-  static void OnCardRemoved(uint16_t code) {
+  static void OnPlaySourceInserted(DfMp3_PlaySource source) {
     Serial.println(F("SD Karte entfernt "));
   }
-  static void OnUsbOnline(uint16_t code) {
+  static void OnPlaySourceRemoved(DfMp3_PlaySource source) {
       Serial.println(F("USB online "));
-  }
-  static void OnUsbInserted(uint16_t code) {
-      Serial.println(F("USB bereit "));
-  }
-  static void OnUsbRemoved(uint16_t code) {
-    Serial.println(F("USB entfernt "));
   }
 };
 
@@ -189,7 +180,9 @@ bool ignoreDownButton = false;
 
 uint8_t numberOfCards = 0;
 
-bool isPlaying() { return !digitalRead(busyPin); }
+bool isPlaying() { 
+  return !digitalRead(busyPin); 
+}
 
 void setup() {
 
